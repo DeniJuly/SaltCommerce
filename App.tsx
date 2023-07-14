@@ -3,9 +3,11 @@ import React, {
   useCallback,
   useEffect,
   useReducer,
+  useRef,
   useState,
 } from 'react';
 import {StyleSheet, View} from 'react-native';
+import SelectDropdown from 'react-native-select-dropdown';
 
 import {Checkout, Header, Loader, Modem, Sort} from './src/components';
 import Popup from './src/components/Popup';
@@ -17,8 +19,10 @@ import productReducer, {
   initialState,
   ProductActionTypes,
 } from './src/reducer/productReducer';
+import {ProductType} from './src/types';
 
 const App = () => {
+  const selectRef = useRef<SelectDropdown>(null);
   const [state, dispatch] = useReducer(productReducer, initialState);
   const [checkoutData, dispatchCheckout] = useReducer(
     checkoutReducer,
@@ -26,8 +30,10 @@ const App = () => {
   );
   const [refresh, setRefresh] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [dataProduct, setDataProduct] = useState<ProductType[]>([]);
 
   const getData = useCallback(() => {
+    selectRef.current?.reset();
     fetch('https://dummyjson.com/products')
       .then(res => res.json())
       .then(res => {
@@ -35,6 +41,7 @@ const App = () => {
           type: ProductActionTypes.GET_PRODUCTS_SUCCESS,
           payload: res?.products,
         });
+        setDataProduct(res?.products);
         setRefresh(false);
       })
       .catch(() => {
@@ -44,6 +51,19 @@ const App = () => {
         });
       });
   }, [dispatch]);
+
+  const filterProducts = (filterType: string) => {
+    let filteredData = [...state.products]; // Create a copy of the original data
+
+    if (filterType === 'Highest Price') {
+      filteredData.sort((a, b) => b.price - a.price); // Sort by highest price
+    } else if (filterType === 'Lowest Price') {
+      filteredData.sort((a, b) => a.price - b.price); // Sort by lowest price
+    } else if (filterType === 'Name') {
+      filteredData.sort((a, b) => a.title.localeCompare(b.title)); // Sort by name
+    }
+    setDataProduct(filteredData); // Update the state with the filtered data
+  };
 
   useEffect(() => {
     dispatch({type: ProductActionTypes.GET_PRODUCTS_REQUEST});
@@ -64,6 +84,10 @@ const App = () => {
     dispatchCheckout({type: CheckoutActionTypes.RESET_PRODUCT});
   };
 
+  const handleSort = (value: string) => {
+    filterProducts(value);
+  };
+
   return (
     <View style={styles.page}>
       <Header product={state.products.length} />
@@ -72,11 +96,11 @@ const App = () => {
           <Loader />
         ) : (
           <Fragment>
-            <Sort />
+            <Sort handleSort={handleSort} ref={selectRef} />
             <Modem
               checkoutData={checkoutData.products}
               dispatchCheckout={dispatchCheckout}
-              data={state}
+              data={dataProduct}
               onRefresh={onRefresh}
               refresh={refresh}
             />

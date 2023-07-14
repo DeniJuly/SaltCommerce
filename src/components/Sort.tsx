@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {forwardRef} from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import SelectDropdown from 'react-native-select-dropdown';
 
@@ -24,8 +24,11 @@ const ItemSelect = ({text, last}: {text: String; last: boolean}) => {
   );
 };
 
-const Sort = () => {
-  const filter = ['Highest Price', 'Lowest Price', 'Name'];
+interface Props {
+  handleSort: (value: string) => void;
+}
+const Sort = forwardRef<SelectDropdown, Props>((props, ref) => {
+  const sort = ['Highest Price', 'Lowest Price', 'Name'];
   return (
     <View style={styles.container}>
       <View style={styles.wrapContent}>
@@ -34,28 +37,27 @@ const Sort = () => {
           <Text style={styles.text}>Sort By: </Text>
         </View>
         <SelectDropdown
-          data={filter}
+          ref={ref}
+          data={sort}
           buttonStyle={styles.selectBtn}
           buttonTextStyle={styles.buttonTextStyle}
           dropdownStyle={styles.dropdownStyle}
           rowStyle={styles.rowStyle}
           dropdownOverlayColor="transparent"
           defaultButtonText="Default"
-          onSelect={(selectedItem, index) => {
-            console.log(selectedItem, index);
-          }}
+          onSelect={selectedItem => props.handleSort(selectedItem)}
           renderDropdownIcon={() => (
             <Image source={IcDropdown} style={styles.iconDropdown} />
           )}
           renderCustomizedRowChild={(item, index) => (
-            <ItemSelect text={item} last={index === filter.length - 1} />
+            <ItemSelect text={item} last={index === sort.length - 1} />
           )}
         />
       </View>
       <View style={styles.border} />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

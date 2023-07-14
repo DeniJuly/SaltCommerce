@@ -7,11 +7,7 @@ import EmptyComponent from './EmptyComponent';
 import ProductItem from './ProductItem';
 
 interface Props {
-  data: {
-    products: ProductType[];
-    loading: boolean;
-    error: boolean;
-  };
+  data: ProductType[];
   checkoutData: CheckoutType[];
   dispatchCheckout: React.Dispatch<CheckoutAction>;
   onRefresh: () => void;
@@ -29,7 +25,7 @@ const Modem = ({
       refreshControl={
         <RefreshControl refreshing={refresh} onRefresh={onRefresh} />
       }
-      data={data.products}
+      data={data}
       keyExtractor={item => item.id?.toString()}
       renderItem={({item}) => {
         return (

@@ -1,15 +1,15 @@
 export type ProductType = {
   id: number;
-  title: String;
-  description: String;
+  title: string;
+  description: string;
   price: number;
   discountPercentage: number;
   rating: number;
   stock: number;
-  brand: String;
-  category: String;
-  thumbnail: String;
-  images: String[];
+  brand: string;
+  category: string;
+  thumbnail: string;
+  images: string[];
 };
 
 export type CheckoutType = {
