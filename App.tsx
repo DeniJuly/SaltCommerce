@@ -1,118 +1,113 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useReducer,
+  useState,
+} from 'react';
+import {StyleSheet, View} from 'react-native';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import {Checkout, Header, Loader, Modem, Sort} from './src/components';
+import Popup from './src/components/Popup';
+import checkoutReducer, {
+  CheckoutActionTypes,
+  initialState as checkoutInitialState,
+} from './src/reducer/checkoutReducer';
+import productReducer, {
+  initialState,
+  ProductActionTypes,
+} from './src/reducer/productReducer';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+const App = () => {
+  const [state, dispatch] = useReducer(productReducer, initialState);
+  const [checkoutData, dispatchCheckout] = useReducer(
+    checkoutReducer,
+    checkoutInitialState,
   );
-}
+  const [refresh, setRefresh] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
-function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const getData = useCallback(() => {
+    fetch('https://dummyjson.com/products')
+      .then(res => res.json())
+      .then(res => {
+        dispatch({
+          type: ProductActionTypes.GET_PRODUCTS_SUCCESS,
+          payload: res?.products,
+        });
+        setRefresh(false);
+      })
+      .catch(() => {
+        dispatch({
+          type: ProductActionTypes.GET_PRODUCTS_FAILURE,
+          payload: true,
+        });
+      });
+  }, [dispatch]);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  useEffect(() => {
+    dispatch({type: ProductActionTypes.GET_PRODUCTS_REQUEST});
+    getData();
+  }, [getData]);
+
+  const onRefresh = React.useCallback(() => {
+    setRefresh(true);
+    getData();
+  }, [getData]);
+
+  const handleCheckout = () => {
+    setShowPopup(true);
+  };
+
+  const handleHidePopup = () => {
+    setShowPopup(false);
+    dispatchCheckout({type: CheckoutActionTypes.RESET_PRODUCT});
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <View style={styles.page}>
+      <Header product={state.products.length} />
+      <View style={styles.content}>
+        {state.loading ? (
+          <Loader />
+        ) : (
+          <Fragment>
+            <Sort />
+            <Modem
+              checkoutData={checkoutData.products}
+              dispatchCheckout={dispatchCheckout}
+              data={state}
+              onRefresh={onRefresh}
+              refresh={refresh}
+            />
+            <Checkout
+              checkoutData={checkoutData.products}
+              productData={state.products}
+              dispatchCheckout={dispatchCheckout}
+              handleCheckout={handleCheckout}
+            />
+          </Fragment>
+        )}
+      </View>
+      <Popup
+        show={showPopup}
+        checkoutData={checkoutData.products}
+        productData={state.products}
+        handleHide={handleHidePopup}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  page: {
+    flex: 1,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  content: {
+    flex: 1,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  listWrap: {
+    paddingTop: 11,
   },
 });
-
 export default App;
